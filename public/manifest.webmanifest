@@ -1,0 +1,9 @@
+{
+  "name": "Recomeço",
+  "short_name": "Recomeço",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4fb",
+  "theme_color": "#f7f4fb",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
