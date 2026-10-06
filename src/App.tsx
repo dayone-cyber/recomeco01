@@ -15,6 +15,11 @@ import { Day22, PatternScreen, Weekly } from './screens/Moments';
 import { ManageSubscription, Paywall } from './screens/Paywall';
 import { GoalScreen, Help, Notifications, Preferences, Privacy, Profile, Reciprocity, StatusScreen, Terms } from './screens/Profile';
 import { effectiveSubscription } from './lib/actions';
+import { supabase } from './lib/supabase';
+import { initSync, restoreFromCloud } from './lib/sync';
+import { getState } from './lib/store';
+
+initSync();
 
 function renderOverlay(o: Overlay) {
   const p = o.params ?? {};
@@ -50,6 +55,12 @@ function Main() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+  }, []);
+
+  // sessão existente (outro aparelho/limpou cache): restaura da nuvem
+  useEffect(() => {
+    if (!supabase || getState().user) return;
+    supabase.auth.getSession().then(({ data }) => { if (data.session) void restoreFromCloud(); });
   }, []);
 
   if (!st.user || !st.profile) {

@@ -199,7 +199,7 @@ export function nextBestAction(st: AppState, now: Date): NextAction {
   // 1. recaída recente sem acompanhamento
   const rel = relapses(st, new Date(now.getTime() - 24 * HOUR));
   const followed = st.journey.find((j) => j.phase === 2)?.last_activity;
-  if (rel.length && (!followed || new Date(followed) < new Date(rel.at(-1)!.timestamp))) {
+  if (rel.length && (!followed || new Date(followed) <= new Date(rel.at(-1)!.timestamp))) {
     reasons.push('Recaída nas últimas 24h');
     return {
       kind: 'relapse_followup',

@@ -12,6 +12,9 @@ import { seedDemo } from '../lib/demo';
 import { detectRisk } from '../engine/safety';
 import type { ReconcileFocus, ReciprocitySignal } from '../types';
 import { notificationCopy } from '../lib/notifications';
+import { cloudEnabled, supabase } from '../lib/supabase';
+import { pushNow, resetFlush, syncError, useSyncStatus } from '../lib/sync';
+import { resetAll } from '../lib/store';
 
 export function Profile() {
   const st = useAppState();
@@ -39,6 +42,7 @@ export function Profile() {
           ))}
         </div>
         {(p.primary_goal === 'reconnect' || p.relationship_status === 'reconciled') && <Button variant="soft" onClick={() => nav.push('reciprocity')}>Sinais de reciprocidade</Button>}
+        {cloudEnabled && <CloudCard />}
         <div className="card stack">
           <span className="tiny">Modo demonstração</span>
           <p className="small muted">Preenche 3 semanas de dados fictícios para você explorar insights, progresso e o Dia 22. Substitui seus dados atuais.</p>
@@ -46,6 +50,20 @@ export function Profile() {
         </div>
       </div>
     </Screen>
+  );
+}
+
+function CloudCard() {
+  const sync = useSyncStatus();
+  const label = { off: 'Desligada', idle: 'Aguardando', syncing: 'Sincronizando…', ok: 'Sincronizado', error: 'Erro ao sincronizar' }[sync];
+  return (
+    <div className="card stack">
+      <span className="tiny">Conta e sincronização</span>
+      <div className="kv"><span className="muted">Status</span><b>{label}</b></div>
+      {sync === 'error' && <p className="small" style={{ color: 'var(--danger)' }}>{syncError()}</p>}
+      <Button variant="secondary" onClick={() => void pushNow()}>Sincronizar agora</Button>
+      <Button variant="ghost" onClick={async () => { await pushNow(); await supabase!.auth.signOut(); resetFlush(); resetAll(); }}>Sair deste aparelho</Button>
+    </div>
   );
 }
 

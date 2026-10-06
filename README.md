@@ -12,6 +12,13 @@ npm run build
 
 QA: `?group=A|B&trial_days=N` força o grupo do experimento. Em **Perfil → Carregar dados de exemplo** há 3 semanas de dados fictícios (insights, progresso, Dia 22, SOS com memória). Em **Perfil → Preferências**, a pausa pode ser acelerada para testar.
 
+## Ligar o Supabase
+
+1. No painel do projeto → **SQL Editor**, rode `supabase/schema.sql` (uma vez).
+2. **Authentication → URL Configuration**: Site URL = endereço do app (`http://localhost:5173` em dev) e adicione-o em Redirect URLs.
+3. Copie `.env.example` para `.env.local` e preencha `VITE_SUPABASE_ANON_KEY` (Settings → API → *anon public*; nunca a `service_role`).
+4. `npm run dev`. A tela de cadastro passa a pedir senha; em **Perfil** aparece o status de sincronização.
+
 ## Onde está cada parte
 
 | Área | Arquivos |
@@ -35,7 +42,7 @@ QA: `?group=A|B&trial_days=N` força o grupo do experimento. Em **Perfil → Car
 
 ## O que **não** está pronto (honestidade)
 
-- **Sem backend ainda.** Os dados ficam no `localStorage` do aparelho; `supabase/schema.sql` é o alvo, mas o adapter de sincronização e o **Supabase Auth** (senha/magic link) não foram ligados. A conta atual é só nome + e-mail locais. “Criptografia em trânsito / armazenamento seguro” dependem dessa etapa.
+- **Supabase: código pronto, não testado contra um projeto real.** Login (e-mail+senha) e sincronização estão implementados (`src/lib/supabase.ts`, `sync.ts`, `screens/Login.tsx`) e só ligam se `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` existirem; sem elas o app segue 100% local. Um teste garante que as colunas enviadas existem no `schema.sql`. Limitações: a coluna `subscription_status` é gravável pelo próprio usuário (cobrança real precisa de webhook no servidor); excluir os dados apaga as linhas, mas apagar o usuário do Auth exige uma Edge Function; sincronização é por último-envio-vence (sem resolução de conflito entre aparelhos simultâneos).
 - **Pagamento é stub**: `subscribe()` apenas muda o status. Falta Stripe/RevenueCat/lojas e o lembrete de fim de teste.
 - **Push real** (servidor/Web Push) e notificações contextuais por horário não estão agendadas; há preferências e texto de exemplo.
 - Analytics grava local e expõe `registerSink` (PostHog/Mixpanel não conectados). Eventos `trial_day_N_active` só disparam quando a Home é aberta nesses dias.

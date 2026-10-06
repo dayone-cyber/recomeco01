@@ -14,10 +14,10 @@ import { detectRisk } from '../engine/safety';
 
 /* ---------- conta e onboarding ---------- */
 
-export function createAccount(name: string, email: string, cfg: RemoteConfig = defaultRemoteConfig) {
+export function createAccount(name: string, email: string, cfg: RemoteConfig = defaultRemoteConfig, authId?: string) {
   const st = getState();
   const now = new Date().toISOString();
-  const userId = uid();
+  const userId = authId ?? uid();
   const a = st.onboarding;
   mutate((d) => {
     d.user = {
@@ -414,7 +414,10 @@ export function exportData(): string {
   return JSON.stringify({ exported_at: new Date().toISOString(), ...rest }, null, 2);
 }
 
-export function deleteAllData() {
+export async function deleteAllData() {
+  // com conta na nuvem: apaga as linhas remotas antes de limpar o aparelho
+  const { deleteRemoteData } = await import('./sync');
+  await deleteRemoteData();
   resetAll();
 }
 

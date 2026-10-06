@@ -88,7 +88,8 @@ describe('cenário E — recaída', () => {
     episode(3, 21, 8, 5);
     episode(2, 21, 8, 5);
     const before = getState().journey.map((j) => j.exercises_completed).join();
-    episode(0, 21, 9, 8, { acted: true });
+    const rid = recordCheckIn({ mood: 'impulse', triggerId: 'vanished', thought: 'Está me esquecendo', urge: 9 });
+    markAction(rid, 'acted');
     const st = getState();
     expect(st.journey.map((j) => j.exercises_completed).join()).not.toBe('');
     expect(st.journey.reduce((a, j) => a + j.exercises_completed, 0)).toBeGreaterThanOrEqual(before.split(',').reduce((a, b) => a + Number(b), 0));

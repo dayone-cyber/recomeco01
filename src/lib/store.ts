@@ -87,6 +87,11 @@ export function mutate(fn: (draft: AppState) => void) {
   setState(draft);
 }
 
+export function subscribe(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
 export function resetAll() {
   setState(emptyState());
 }

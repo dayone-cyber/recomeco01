@@ -24,7 +24,9 @@ create table user_profile (
   routine_impact smallint, baseline_check_frequency numeric, distancing_history smallint,
   relief_score smallint check (relief_score between 0 and 10), boundary_difficulty smallint,
   current_phase smallint check (current_phase between 1 and 6),
-  reconcile_focus text, early_signs text[] default '{}', relapse_plan text
+  reconcile_focus text, early_signs text[] default '{}', relapse_plan text,
+  baseline_thought_load smallint, main_behaviors text[] default '{}', goal_history jsonb default '[]',
+  client_state jsonb default '{}'  -- flags e preferências do app (Dia 22 visto, etc.)
 );
 
 create table triggers (

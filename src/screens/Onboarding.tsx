@@ -4,6 +4,8 @@ import { createAccount, saveOnboarding } from '../lib/actions';
 import { track } from '../lib/analytics';
 import { fetchRemoteConfig, defaultRemoteConfig } from '../lib/remoteConfig';
 import { Button, Chain, Choice } from '../components/ui';
+import { cloudEnabled, supabase } from '../lib/supabase';
+import { Login, finishSignIn } from './Login';
 import { buildFormulation, profileFromAnswers } from '../engine/formulation';
 import {
   AGE_RANGES, BEHAVIORS, BOUNDARY_DIFF, CHECKING, DISTANCING, GOALS, ROUTINE_IMPACT, SITUATIONS, THOUGHT_LOAD,
@@ -29,7 +31,7 @@ const QUESTIONS: Q[] = [
   { key: 'main_behaviors', kind: 'multi', max: 2, title: 'Quando sente que pode perder essa pessoa, o que você costuma fazer?', options: BEHAVIORS },
 ];
 
-type Stage = 'intro' | 'q' | 'result' | 'account';
+type Stage = 'intro' | 'q' | 'result' | 'account' | 'login';
 
 export function Onboarding() {
   const st = useAppState();
@@ -61,6 +63,7 @@ export function Onboarding() {
         </div>
         <div className="layer stack">
           <Button onClick={() => setStage('q')}>Começar</Button>
+          {cloudEnabled && <button className="link" style={{ textAlign: 'center' }} onClick={() => setStage('login')}>Já tenho conta</button>}
           <p className="small muted" style={{ textAlign: 'center' }}>O Recomeço não é terapia nem diagnóstico e não substitui acompanhamento psicológico.</p>
         </div>
       </div>
@@ -108,6 +111,8 @@ export function Onboarding() {
     );
   }
 
+  if (stage === 'login') return <Login onBack={() => setStage('intro')} />;
+
   const profile = profileFromAnswers('preview', a);
   const f = buildFormulation(profile);
 
@@ -149,7 +154,20 @@ function Account({ cfg, onBack }: { cfg: typeof defaultRemoteConfig; onBack: () 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [ok, setOk] = useState(false);
-  const valid = name.trim().length > 0 && /.+@.+\..+/.test(email) && ok;
+  const [password, setPassword] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const valid = name.trim().length > 0 && /.+@.+\..+/.test(email) && ok && (!cloudEnabled || password.length >= 8);
+
+  const submit = async () => {
+    if (!cloudEnabled) return createAccount(name, email, cfg);
+    setBusy(true); setMsg(null);
+    const { data, error } = await supabase!.auth.signUp({ email: email.trim(), password, options: { data: { name: name.trim() }, emailRedirectTo: window.location.origin } });
+    if (error) setMsg(error.message);
+    else if (!data.session) setMsg('Enviamos um link de confirmação para o seu e-mail. Confirme e depois entre com “Já tenho conta”. Suas respostas ficam guardadas neste aparelho.');
+    else { const e = await finishSignIn(); if (e) setMsg(e); }
+    setBusy(false);
+  };
   return (
     <div className="scroll no-nav fade">
       <div className="layer stack-lg">
@@ -161,12 +179,14 @@ function Account({ cfg, onBack }: { cfg: typeof defaultRemoteConfig; onBack: () 
         <div className="stack">
           <input className="field" placeholder="Seu primeiro nome" value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" />
           <input className="field" placeholder="Seu e-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          {cloudEnabled && <input className="field" type="password" placeholder="Crie uma senha (mín. 8 caracteres)" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />}
           <label className="check">
             <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
             <span>Concordo com o tratamento dos meus dados sensíveis para o acompanhamento (LGPD) e entendo que o Recomeço não é terapia, diagnóstico ou substituto de ajuda profissional.</span>
           </label>
         </div>
-        <Button disabled={!valid} onClick={() => createAccount(name, email, cfg)}>Criar meu acompanhamento</Button>
+        {msg && <p role="alert" className="small" style={{ fontWeight: 600 }}>{msg}</p>}
+        <Button disabled={!valid || busy} onClick={submit}>{busy ? 'Criando…' : 'Criar meu acompanhamento'}</Button>
       </div>
     </div>
   );
