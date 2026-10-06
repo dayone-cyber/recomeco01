@@ -9,7 +9,7 @@ import { seedDemo } from './demo';
 function schemaColumns(): Record<string, Set<string>> {
   const sql = readFileSync('supabase/schema.sql', 'utf8');
   const out: Record<string, Set<string>> = {};
-  for (const m of sql.matchAll(/create table (\w+) \(([\s\S]*?)\n\);/g)) {
+  for (const m of sql.matchAll(/create table (?:if not exists )?(\w+) \(([\s\S]*?)\n\);/g)) {
     const cols = new Set<string>();
     for (const part of m[2].replace(/--.*$/gm, '').split(/,(?![^(]*\))/)) {
       const w = part.trim().split(/\s+/)[0];
